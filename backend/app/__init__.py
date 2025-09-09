@@ -1,11 +1,12 @@
 from flask import Flask
 import os
 from .extensions import db, ma, migrate
-from .routes.image_handler import image_handler_bp
+# Temporarily disable routes that require ML libraries due to disk space constraints
+# from .routes.image_handler import image_handler_bp
 from .routes.measurements import measurements_bp
 from .routes.metal_pieces import metal_piece_bp
-from .routes.esp32 import esp32_bp
-from .routes.dual_esp32 import dual_esp32_bp
+# from .routes.esp32 import esp32_bp
+# from .routes.dual_esp32 import dual_esp32_bp
 from flask_cors import CORS
 
 def create_app(config_class="app.config.Config"):
@@ -21,10 +22,12 @@ def create_app(config_class="app.config.Config"):
     migrate.init_app(app, db)
     ma.init_app(app)
     CORS(app)
-    app.register_blueprint(image_handler_bp, url_prefix="/api/image_handler")
+    
+    # Only register routes that don't require ML libraries for now
+    # app.register_blueprint(image_handler_bp, url_prefix="/api/image_handler")
     app.register_blueprint(measurements_bp, url_prefix="/api/measurements")
     app.register_blueprint(metal_piece_bp, url_prefix="/api/metal_pieces")
-    app.register_blueprint(esp32_bp, url_prefix="/api/esp32")
-    app.register_blueprint(dual_esp32_bp, url_prefix="/api/dual_esp32")
+    # app.register_blueprint(esp32_bp, url_prefix="/api/esp32")
+    # app.register_blueprint(dual_esp32_bp, url_prefix="/api/dual_esp32")
 
     return app
