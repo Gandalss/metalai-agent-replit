@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<coverage version="0">
+  <!--
+    Zweck: Test-Coverage-Report (z. B. pytest-cov, nyc/istanbul) wird hierhin geschrieben.
+    Diese Platzhalterdatei erlaubt Artifacts/Uploads auch ohne ersten Testlauf.
+  -->
+</coverage>
+

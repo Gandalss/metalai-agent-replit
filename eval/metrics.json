@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentEvaluation",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "repo": {"type": "string"}
+      },
+      "required": ["name"]
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "phase": {"type": "string"},
+          "iteration": {"type": "integer"},
+          "start": {"type": "string", "format": "date-time"},
+          "end": {"type": "string", "format": "date-time"},
+          "prompts": {"type": "integer"},
+          "errors": {"type": "integer"},
+          "tests_green": {"type": "boolean"},
+          "token_used": {"type": "integer"},
+          "cost_usd": {"type": "number"},
+          "commit_sha": {"type": "string"},
+          "notes": {"type": "string"}
+        },
+        "required": ["phase","iteration","start","end","prompts","errors","tests_green","commit_sha"]
+      }
+    }
+  },
+  "required": ["agent","runs"],
+  "agent": {
+    "name": "(n.v.)",
+    "version": "(n.v.)",
+    "repo": "(wird automatisch aus Git-Remote abgeleitet, optional)"
+  },
+  "runs": []
+}
+

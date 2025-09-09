@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="placeholder" tests="0" failures="0" errors="0" skipped="0" time="0.0">
+  <!--
+    Zweck: CI/Testlauf überschreibt diese Datei mit echten JUnit-Resultaten.
+    Bitte nicht löschen, damit das Ziel im Repo existiert.
+  -->
+</testsuite>
+

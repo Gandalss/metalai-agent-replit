@@ -1,0 +1,36 @@
+{
+  "agent": {
+    "name": "(hier Agenten-Kurzname eintragen: copilot | cursor | aider | continue | qodo | replit | codex-legacy)",
+    "log_mode": "append-only",
+    "timezone": "UTC"
+  },
+  "logging": {
+    "runlog_path": "eval/RUNLOG.md",
+    "metrics_path": "eval/metrics.json",
+    "junit_path": "eval/junit.xml",
+    "coverage_path": "eval/coverage.xml",
+    "diff_path": "eval/diff.patch"
+  },
+  "rules": {
+    "touch_only_eval_folder": true,
+    "disallow_overwrite_previous_runs": true,
+    "fill_missing_with": "(n.v.)",
+    "commit_required": true
+  }
+}
+# Evaluations-Runlog
+
+> Zweck: Menschlich lesbares Kurzprotokoll je Run/Iteration. **Nur anhängen, nie überschreiben.**
+> Zeitzone: UTC, Format: `YYYY-MM-DD HH:MM`
+
+| Datum/Zeit (Start–Ende) | Agent | Phase  | Iteration | Prompts | Fehler | Tests grün | Commit-SHA | Notizen |
+|---|---|---|---:|---:|---:|:---:|---|---|
+| (n.v.) | (auto aus AGENT_INFO.md) | phase1 | 1 | 0 | 0 | ☐ | (n.v.) | Initialeintrag – Tabelle existiert |
+
+**Konventionen**
+- **Agent**: muss dem Feld `agent.name` aus `agent-config.json` entsprechen.
+- **Phase**: `phase1`, `phase2`, … (nur Kleinbuchstaben).
+- **Iteration**: fortlaufend innerhalb einer Phase (1, 2, 3, …).
+- **Tests grün**: ✅ (grün) / ❌ (rot) / ☐ (nicht ausgeführt).
+- **Commit-SHA**: kurzer Git-Hash des letzten Commits dieses Runs.
+
