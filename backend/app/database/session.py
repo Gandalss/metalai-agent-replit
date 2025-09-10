@@ -8,17 +8,11 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from .models import Base
 
-# Database configuration
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "sqlite+aiosqlite:///./instance/app.db"  # Default to async SQLite
-)
+# Database configuration - Force SQLite for development
+DATABASE_URL = "sqlite+aiosqlite:///./instance/app.db"
 
-# Handle PostgreSQL URL format if provided
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-elif DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+# Ensure the instance directory exists
+os.makedirs("./instance", exist_ok=True)
 
 # Create async engine
 async_engine = create_async_engine(

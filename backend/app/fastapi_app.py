@@ -62,7 +62,8 @@ async def health_check(db: AsyncSession = Depends(get_db_session)):
     """
     try:
         # Simple database query to verify connection
-        result = await db.execute("SELECT 1")
+        from sqlalchemy import text
+        result = await db.execute(text("SELECT 1"))
         return {
             "status": "healthy",
             "database": "connected",
@@ -96,8 +97,8 @@ async def list_materials(db: AsyncSession = Depends(get_db_session)):
                     "name": material.name,
                     "description": material.description,
                     "material_type": material.material_type,
-                    "density": float(material.density) if material.density else None,
-                    "created_at": material.created_at.isoformat() if material.created_at else None
+                    "density": float(material.density) if material.density is not None else None,
+                    "created_at": material.created_at.isoformat() if material.created_at is not None else None
                 }
                 for material in materials
             ]
