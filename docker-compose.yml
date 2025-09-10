@@ -23,11 +23,11 @@ services:
     build:
       context: ./backend
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/metal_measurements
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres123@postgres:5432/metal_measurements
       - PYTHONPATH=/app
     volumes:
       - backend-data:/app/instance
-      - ./backend/app/scripts :/app/scripts   # Mount scripts for ML processing
+      - ./backend/app/scripts:/app/scripts   # Mount scripts for ML processing
     ports:
       - "8000:8000"
     depends_on:
