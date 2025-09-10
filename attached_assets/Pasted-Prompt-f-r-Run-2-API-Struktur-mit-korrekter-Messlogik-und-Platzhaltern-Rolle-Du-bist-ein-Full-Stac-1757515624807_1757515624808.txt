@@ -1,0 +1,20 @@
+Prompt für Run 2: API-Struktur mit korrekter Messlogik und Platzhaltern
+Rolle: Du bist ein Full-Stack-Entwickler.
+Aufgabe: Du passt die API-Struktur an und implementierst die korrekte Logik zur Ansteuerung der Mess-Skripte.
+Hintergrund: In den vorherigen Versuchen wurden die Mess-Skripte falsch den Bildern zugeordnet, was zu völlig falschen Werten führte. Dies muss von Anfang an korrekt implementiert werden.
+Anweisungen:
+1. API-Endpunkt erstellen (fastapi_app.py):
+    * Erstelle den POST /api/process-images-Endpunkt, der zwei Datei-Uploads akzeptiert: image_bottom: UploadFile und image_side: UploadFile.
+2. Logik zur Skriptausführung implementieren (image_handler/main.py):
+    * Erstelle eine zentrale Funktion process_images(image_bottom_path: str, image_side_path: str).
+    * Korrekte Skript-Zuweisung (Kritischer Punkt):
+        * Das Skript Main7BottomWidthBETTER.py darf nur mit dem image_side-Bild aufgerufen werden, um die Tiefe zu messen.
+        * Die Skripte Main2Bottom.py und Main4High.py dürfen nur mit dem image_bottom-Bild aufgerufen werden, um Breite und Höhe zu messen.
+    * Robuste Ausführung: Stelle sicher, dass die Skripte mit dem korrekten Arbeitsverzeichnis (cwd) ausgeführt werden, damit die trainierten Modelle (best.pt) gefunden werden können.
+    * Parsing: Implementiere eine robuste Parsing-Logik, die die numerischen Werte aus der Textausgabe der Skripte extrahiert (z.B. aus "Finale Unterseiten-Breite: 5.8 cm").
+3. Antwort-Struktur definieren:
+    * Der Endpunkt soll eine JSON-Struktur mit einem measurements-Array zurückgeben.
+    * Jedes Objekt im Array soll die Felder item_id, material_id, width_mm, height_mm, depth_mm, confidence, und calculated_weight_kg enthalten.
+4. Platzhalter verwenden:
+    * Für diesen Run ist es in Ordnung, wenn Felder wie material_id oder confidence feste Werte haben. Die korrekte Zuordnung von width_mm, height_mm und depth_mm basierend auf den Skript-Ausgaben ist das Hauptziel.
+5. Abschluss: Beende den Run, wenn der API-Endpunkt die beiden Bilder an die korrekten Skripte weiterleitet und die extrahierten Messwerte in der definierten JSON-Struktur zurückgibt.
