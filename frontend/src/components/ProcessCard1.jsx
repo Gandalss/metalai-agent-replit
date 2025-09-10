@@ -3,6 +3,7 @@ import Button from './Button'
 import { useMeasurementsStore } from '../stores/useMeasurementsStore'
 import { useProcessStore } from '../stores/useProcessStore'
 import { useDualEsp32Store } from '../stores/useDualEsp32Store'
+import { compressImage, formatFileSize, isValidImageFile } from '../utils/imageCompression'
 
 const ProcessCard1 = () => {
   const { getMeasurements, updateMeasurements } = useMeasurementsStore();
@@ -12,6 +13,10 @@ const ProcessCard1 = () => {
   const [image2, setImage2] = React.useState(null);
   const [preview1, setPreview1] = React.useState(null);
   const [preview2, setPreview2] = React.useState(null);
+  const [compressing1, setCompressing1] = React.useState(false);
+  const [compressing2, setCompressing2] = React.useState(false);
+  const [originalSizes, setOriginalSizes] = React.useState({ image1: null, image2: null });
+  const [compressedSizes, setCompressedSizes] = React.useState({ image1: null, image2: null });
 
   const handleClick = async () => {
     if (image1 && image2) {
@@ -38,16 +43,43 @@ const ProcessCard1 = () => {
     }
   };
 
-  const handleDrop = (e) => {
+  // Helper function to handle file processing with compression
+  const processFile = async (file, setImage, setPreview, setCompressing, imageKey) => {
+    if (!isValidImageFile(file)) {
+      alert('Please select a valid image file (JPEG, PNG, WebP)');
+      return;
+    }
+
+    setCompressing(true);
+    const originalSize = file.size;
+    
+    try {
+      const compressedFile = await compressImage(file, 1024 * 1024); // 1MB max
+      setImage(compressedFile);
+      setPreview(URL.createObjectURL(compressedFile));
+      
+      // Update size tracking
+      setOriginalSizes(prev => ({ ...prev, [imageKey]: originalSize }));
+      setCompressedSizes(prev => ({ ...prev, [imageKey]: compressedFile.size }));
+      
+      console.log(`Image ${imageKey} compressed: ${formatFileSize(originalSize)} -> ${formatFileSize(compressedFile.size)}`);
+    } catch (error) {
+      console.error('Failed to compress image:', error);
+      alert('Failed to compress image. Please try again.');
+    } finally {
+      setCompressing(false);
+    }
+  };
+
+  const handleDrop = async (e) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-    if (files[0]) {
-      setImage1(files[0]);
-      setPreview1(URL.createObjectURL(files[0]));
+    
+    if (files[0] && !image1) {
+      await processFile(files[0], setImage1, setPreview1, setCompressing1, 'image1');
     }
-    if (files[1]) {
-      setImage2(files[1]);
-      setPreview2(URL.createObjectURL(files[1]));
+    if (files[1] && !image2) {
+      await processFile(files[1], setImage2, setPreview2, setCompressing2, 'image2');
     }
   };
 
@@ -73,10 +105,40 @@ const ProcessCard1 = () => {
             >
               <p className="text-gray-600">Drag & Drop both images here (first the top view, then the side view)</p>
               <label className="text-left">1. Top view (bottom &amp; height)
-                <input type="file" accept="image/*" onChange={(e) => {setImage1(e.target.files[0]); setPreview1(URL.createObjectURL(e.target.files[0]));}} />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={async (e) => {
+                    if (e.target.files[0]) {
+                      await processFile(e.target.files[0], setImage1, setPreview1, setCompressing1, 'image1');
+                    }
+                  }} 
+                  disabled={compressing1}
+                />
+                {compressing1 && <span className="text-blue-600 text-sm ml-2">Compressing...</span>}
+                {originalSizes.image1 && compressedSizes.image1 && (
+                  <span className="text-green-600 text-sm ml-2">
+                    {formatFileSize(originalSizes.image1)} → {formatFileSize(compressedSizes.image1)}
+                  </span>
+                )}
               </label>
               <label className="text-left">2. Side view (width)
-                <input type="file" accept="image/*" onChange={(e) => {setImage2(e.target.files[0]); setPreview2(URL.createObjectURL(e.target.files[0]));}} />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={async (e) => {
+                    if (e.target.files[0]) {
+                      await processFile(e.target.files[0], setImage2, setPreview2, setCompressing2, 'image2');
+                    }
+                  }} 
+                  disabled={compressing2}
+                />
+                {compressing2 && <span className="text-blue-600 text-sm ml-2">Compressing...</span>}
+                {originalSizes.image2 && compressedSizes.image2 && (
+                  <span className="text-green-600 text-sm ml-2">
+                    {formatFileSize(originalSizes.image2)} → {formatFileSize(compressedSizes.image2)}
+                  </span>
+                )}
               </label>
               <div className="flex gap-2 mt-2">
                 {preview1 && <img src={preview1} alt="preview1" className="w-20 h-20 object-cover" />}

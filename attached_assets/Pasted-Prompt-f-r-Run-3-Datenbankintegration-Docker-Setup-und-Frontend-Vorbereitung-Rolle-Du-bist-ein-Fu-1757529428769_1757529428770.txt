@@ -1,0 +1,19 @@
+Prompt für Run 3: Datenbankintegration, Docker-Setup und Frontend-Vorbereitung
+Rolle: Du bist ein Full-Stack- und DevOps-Entwickler.
+Aufgabe: Du integrierst die Datenbank in die API, richtest das gesamte Projekt für Docker ein und behebst proaktiv bekannte Frontend-Probleme.
+Hintergrund: Frühere Versuche scheiterten an 413 Request Entity Too Large-Fehlern, einer fehlerhaften Docker-Konfiguration und einer weißen Seite im Frontend aufgrund von Konfigurationsproblemen.
+Anweisungen:
+1. Datenbanklogik in API integrieren (fastapi_app.py):
+    * Implementiere eine Startup-Logik, die beim Start der FastAPI-Anwendung einen Dummy-Eintrag in der materials-Tabelle anlegt ('Unknown Material').
+    * Erweitere den POST /api/process-images-Endpunkt so, dass die gemessenen Dimensionen in der inventory_items-Tabelle gespeichert werden.
+    * Die item_id aus der Datenbank soll in der API-Antwort zurückgegeben werden.
+    * Erstelle einen GET /api/inventory-Endpunkt, der alle Einträge aus der inventory_items-Tabelle zurückgibt.
+2. Frontend-Setup (frontend/):
+    * Vite-Konfiguration (vite.config.js): Richte das @tailwindcss/vite-Plugin korrekt ein.
+    * CSS-Setup (index.css): Importiere die Tailwind-Basis-Styles mit @import "tailwindcss";.
+    * Bild-Kompression: Erstelle eine Utility-Funktion (imageCompression.js), die Bilder clientseitig vor dem Upload auf eine maximale Größe (z.B. 1MB) komprimiert. Binde diese Funktion in die Upload-Komponente ein.
+3. Docker-Konfiguration (docker-compose.yml):
+    * Erstelle Services für frontend, backend und postgres.
+    * Frontend-Service: Nutze einen Nginx-basierten Container, um die statischen React-Dateien auszuliefern. Konfiguriere Nginx so, dass /api-Anfragen an den Backend-Service weitergeleitet werden und passe client_max_body_size auf z.B. 10M an.
+    * Backend-Service: Das Dockerfile soll uvicorn verwenden, um die FastAPI-App zu starten.
+4. Abschluss: Beende den Run, wenn das gesamte System mit docker-compose up --build startbar ist, das Frontend korrekt angezeigt wird und die Messungen über die Weboberfläche erfolgreich in der Datenbank gespeichert werden.

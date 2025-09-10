@@ -1,7 +1,14 @@
-FROM python:3.12-slim
+# Use Python 3.11 slim image
+FROM python:3.11-slim
 
-# System dependencies für OpenCV
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies (for future ML expansion)
 RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    pkg-config \
     libglib2.0-0 \
     libgl1 \
     libgomp1 \
@@ -10,19 +17,26 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Environment für headless Betrieb
+# Environment for headless operation
 ENV DISPLAY=""
 ENV QT_QPA_PLATFORM="offscreen"
 
-WORKDIR /app
-
-COPY requirements.txt ./
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Test ob OpenCV funktioniert
-RUN python -c "import cv2; print('OpenCV funktioniert!')"
-
+# Copy application code
 COPY . .
 
-EXPOSE 5000
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "--timeout", "120", "run:app"]
+# Create database directory
+RUN mkdir -p /app/instance
+
+# Expose port
+EXPOSE 8000
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV DATABASE_URL=sqlite:///./instance/metal_measurements.db
+
+# Run uvicorn
+CMD ["uvicorn", "app.fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 
 from .database.session import get_db_session, create_tables, close_db_engine
 from .image_handler.main import process_images, save_uploaded_file
@@ -24,6 +24,33 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     await create_tables()
+
+    # Seed default 'Unknown Material' if missing
+    from sqlalchemy import select
+    from .database.models import Material
+    try:
+        async for db in get_db_session():
+            result = await db.execute(
+                select(Material.id).where(Material.name == "Unknown Material")
+            )
+            if result.scalar_one_or_none() is None:
+                db.add(
+                    Material(
+                        name="Unknown Material",
+                        description="Auto-created default material",
+                        material_type="unknown",
+                        density=None,
+                    )
+                )
+                await db.commit()
+                print("✓ Created default 'Unknown Material' entry")
+            else:
+                print("✓ Default 'Unknown Material' already exists")
+            break  # close the yielded session
+    except Exception as e:
+        # Do not block startup if seeding fails; log for visibility
+        print(f"Startup seed warning: {e}")
+
     yield
     # Shutdown
     await close_db_engine()
@@ -146,12 +173,15 @@ async def process_images_endpoint(
         # Process images with correct script assignment
         measurements = process_images(bottom_path, side_path)
         
+        # Save measurements to database
+        inventory_item_id = await _save_measurements_to_db(db, measurements)
+        
         # Create response in the required format
         response = {
             "measurements": [
                 {
-                    "item_id": 1,  # Placeholder as requested
-                    "material_id": 1,  # Placeholder as requested  
+                    "item_id": inventory_item_id if inventory_item_id else None,
+                    "material_id": 1,  # Default to Unknown Material
                     "width_mm": measurements.get("width_mm"),
                     "height_mm": measurements.get("height_mm"),
                     "depth_mm": measurements.get("depth_mm"),
@@ -184,6 +214,63 @@ async def process_images_endpoint(
                 print(f"Warning: Failed to clean up temporary file {temp_file}: {e}")
 
 
+async def _save_measurements_to_db(db: AsyncSession, measurements: dict) -> Optional[int]:
+    """
+    Save measurement data to the inventory_items table.
+    
+    Args:
+        db: Database session
+        measurements: Dictionary containing measurement data
+        
+    Returns:
+        The ID of the created inventory item, or None if saving failed
+    """
+    from sqlalchemy import select
+    from .database.models import Material, InventoryItem
+    
+    try:
+        # Get the Unknown Material ID
+        result = await db.execute(
+            select(Material.id).where(Material.name == "Unknown Material")
+        )
+        material_id = result.scalar_one_or_none()
+        
+        if material_id is None:
+            print("Warning: Unknown Material not found in database")
+            return None
+        
+        # Only save if we have valid measurements
+        if not all(measurements.get(key) is not None for key in ["width_mm", "height_mm", "depth_mm"]):
+            print("Warning: Incomplete measurements, not saving to database")
+            return None
+        
+        # Create new inventory item
+        inventory_item = InventoryItem(
+            material_id=material_id,
+            width=measurements.get("width_mm"),
+            height=measurements.get("height_mm"),
+            depth=measurements.get("depth_mm"),
+            volume=measurements.get("volume_mm3"),
+            weight=measurements.get("calculated_weight_kg", 0) * 1000 if measurements.get("calculated_weight_kg") else None,  # Convert kg to grams
+            quantity=1,
+            quality_grade="AUTO",  # Mark as auto-measured
+            notes="Automatically measured using computer vision",
+            is_available=True
+        )
+        
+        db.add(inventory_item)
+        await db.commit()
+        await db.refresh(inventory_item)
+        
+        print(f"✓ Saved inventory item with ID: {inventory_item.id}")
+        return inventory_item.id
+        
+    except Exception as e:
+        print(f"Warning: Failed to save measurements to database: {e}")
+        await db.rollback()
+        return None
+
+
 @app.get("/api/process-images/test")
 async def test_process_images():
     """
@@ -208,6 +295,56 @@ async def test_process_images():
         "status": "success",
         "message": "Test response - image processing structure verified"
     }
+
+
+@app.get("/api/inventory")
+async def get_inventory(db: AsyncSession = Depends(get_db_session)):
+    """
+    Get all inventory items with their associated material information.
+    Returns a list of all inventory items in the database.
+    """
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+    from .database.models import InventoryItem
+    
+    try:
+        # Query inventory items with their associated material
+        result = await db.execute(
+            select(InventoryItem)
+            .options(selectinload(InventoryItem.material))
+            .order_by(InventoryItem.created_at.desc())
+        )
+        inventory_items = result.scalars().all()
+        
+        # Format response
+        items = []
+        for item in inventory_items:
+            items.append({
+                "id": item.id,
+                "material_id": item.material_id,
+                "material_name": item.material.name if item.material else "Unknown",
+                "material_type": item.material.material_type if item.material else "unknown",
+                "width_mm": float(item.width) if item.width is not None else None,
+                "height_mm": float(item.height) if item.height is not None else None,
+                "depth_mm": float(item.depth) if item.depth is not None else None,
+                "volume_mm3": float(item.volume) if item.volume is not None else None,
+                "weight_g": float(item.weight) if item.weight is not None else None,
+                "quantity": item.quantity,
+                "location": item.location,
+                "quality_grade": item.quality_grade,
+                "notes": item.notes,
+                "is_available": item.is_available,
+                "created_at": item.created_at.isoformat() if item.created_at is not None else None
+            })
+        
+        return {
+            "inventory": items,
+            "total_count": len(items),
+            "status": "success"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve inventory: {str(e)}")
 
 
 if __name__ == "__main__":

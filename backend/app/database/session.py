@@ -8,8 +8,11 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from .models import Base
 
-# Database configuration - Force SQLite for development
-DATABASE_URL = "sqlite+aiosqlite:///./instance/app.db"
+# Database configuration - support both SQLite and PostgreSQL
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "sqlite+aiosqlite:///./instance/app.db"  # Default to SQLite for development
+)
 
 # Ensure the instance directory exists
 os.makedirs("./instance", exist_ok=True)
